@@ -5,7 +5,7 @@ import ModelDropdown from './ModelDropdown';
 import SetAPIKey from './SetAPIKey';
 import TaskUI from './TaskUI';
 import OptionsDropdown from './OptionsDropdown';
-import logo from '../assets/img/logo-new.jpg';
+import logo from '../assets/img/logo.png';
 
 const App = () => {
   const openAIKey = useAppState((state) => state.settings.openAIKey);

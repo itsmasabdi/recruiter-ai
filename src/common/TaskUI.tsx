@@ -15,6 +15,8 @@ const TaskUI = () => {
     setInstructions: state.ui.actions.setInstructions,
     memory: state.ui.memory,
     setMemory: state.ui.actions.setMemory,
+    resume: state.ui.resume,
+    setResume: state.ui.actions.setResume,
     page: state.settings.page,
     updateSettings: state.settings.actions.update,
   }));
@@ -50,8 +52,16 @@ const TaskUI = () => {
   if (state.page !== 'default') {
     return (
       <>
-        <div>Resume</div>
-        {state.page === 'resume' ? null : (
+        <div>{state.page}</div>
+        {state.page === 'resume' ? (
+          <Textarea
+            autoFocus
+            value={state.resume || ''}
+            mb={2}
+            onChange={(e) => state.setResume(e.target.value)}
+            minH="200px"
+          />
+        ) : (
           <Textarea
             autoFocus
             value={state.memory || ''}
@@ -72,7 +82,7 @@ const TaskUI = () => {
       {state.taskStatus}
       <Textarea
         autoFocus
-        placeholder="Taxy uses OpenAI's GPT-4 API to perform actions on the current page. Try telling it to sign up for a newsletter, or to add an item to your cart."
+        placeholder="Recruiter AI uses OpenAI's GPT-4 API to apply for jobs for you. Enter your resume into the settings tab and ask it to apply to any job."
         value={state.instructions || ''}
         disabled={taskInProgress}
         onChange={(e) => state.setInstructions(e.target.value)}

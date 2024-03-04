@@ -10,6 +10,8 @@ import logo from '../assets/img/logo-new.jpg';
 const App = () => {
   const openAIKey = useAppState((state) => state.settings.openAIKey);
 
+  // chrome.runtime.sendMessage({ action: 'startTask', instructions: 'Hello' });
+
   return (
     <ChakraProvider>
       <Box p="8" fontSize="lg" w="full">

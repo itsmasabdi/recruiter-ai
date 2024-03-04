@@ -34,6 +34,7 @@ export const useAppState = create<StoreType>()(
       partialize: (state) => ({
         // Stuff we want to persist
         ui: {
+          resume: state.ui.resume,
           memory: state.ui.memory,
           instructions: state.ui.instructions,
         },

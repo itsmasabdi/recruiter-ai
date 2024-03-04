@@ -90,7 +90,9 @@ const TaskHistoryItem = ({ index, entry }: TaskHistoryItemProps) => {
   const [answer, setAnswer] = React.useState('');
   const submitResponse = () => {
     state.setMemory(
-      `${state.memory}\n ${entry.action.parsedAction.args.question} Answer:${answer}`
+      `${state.memory}\n${
+        JSON.parse(entry.action.parsedAction.arguments)?.question
+      } Answer: ${answer}`
     );
     setAnswer('submitted');
     state.setStatus('running');
@@ -112,7 +114,9 @@ const TaskHistoryItem = ({ index, entry }: TaskHistoryItemProps) => {
         {entry.action?.parsedAction?.name === 'askUser' &&
         answer !== 'submitted' ? (
           <>
-            <div>Q: {entry.action.parsedAction.args.question}</div>
+            <div>
+              Q: {JSON.parse(entry.action.parsedAction.arguments)?.question}
+            </div>
             <Input
               placeholder="Write your response here"
               value={answer}

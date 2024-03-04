@@ -1,39 +1,19 @@
-import {
-  Configuration,
-  CreateCompletionResponseUsage,
-  OpenAIApi,
-} from 'openai';
+import OpenAI from 'openai';
 import { useAppState } from '../state/store';
-import { availableActions } from './availableActions';
+import { availableActions, tools } from './availableActions';
 import { ParsedResponseSuccess } from './parseResponse';
-
-const formattedActions = availableActions
-  .map((action, i) => {
-    const args = action.args
-      .map((arg) => `${arg.name}: ${arg.type}`)
-      .join(', ');
-    return `${i + 1}. ${action.name}(${args}): ${action.description}`;
-  })
-  .join('\n');
 
 const systemMessage = `
 You are a browser automation assistant that is helping the user apply for jobs.
 
-You can use the following tools:
-
-${formattedActions}
-
 You will be be given a task to perform and the current state of the DOM. You will also be given previous actions that you have taken. You may retry a failed action up to one time.
 
-This is an example of an action:
+Use the provided tools to interact with the DOM. You may also ask the user for input. Try not to ask any questions unelss it is very important to the task.
 
-<Thought>I should click the add to cart button</Thought>
-<Action>click(223)</Action>
-
-You must always include the <Thought> and <Action> open/close tags or else your response will be marked as invalid, while keeping the Thought as short as possible.
-
-If there was any questions in the forms, and see if you can infer that based on the resume, if not ask the user for the information.
+DO NOT REPEAT ANY TASKS THAT YOU HAVE PERFORMED BEFORE!
 `;
+
+//Use user's email and fixed password (Password!23) to login if you have already created an account. If not create an account first.
 
 export async function determineNextAction(
   taskInstructions: string,
@@ -43,10 +23,12 @@ export async function determineNextAction(
   notifyError?: (error: string) => void
 ) {
   const model = useAppState.getState().settings.selectedModel;
+  const resume = useAppState.getState().ui.resume;
   const memory = useAppState.getState().ui.memory;
   const prompt = formatPrompt(
     taskInstructions,
     previousActions,
+    resume,
     memory,
     simplifiedDOM
   );
@@ -56,16 +38,16 @@ export async function determineNextAction(
     return null;
   }
 
-  const openai = new OpenAIApi(
-    new Configuration({
-      apiKey: key,
-    })
-  );
+  const openai = new OpenAI({
+    apiKey: key,
+    dangerouslyAllowBrowser: true,
+  });
 
   for (let i = 0; i < maxAttempts; i++) {
     try {
-      const completion = await openai.createChatCompletion({
+      const completion = await openai.chat.completions.create({
         model: model,
+        tools: tools as any,
         messages: [
           {
             role: 'system',
@@ -73,16 +55,16 @@ export async function determineNextAction(
           },
           { role: 'user', content: prompt },
         ],
-        max_tokens: 2048,
+        // max_tokens: 2048,
         temperature: 0,
-        stop: ['</Action>'],
       });
 
+      // console.log('determineNextAction completion', completion);
+
       return {
-        usage: completion.data.usage as CreateCompletionResponseUsage,
+        usage: completion.usage?.total_tokens,
         prompt,
-        response:
-          completion.data.choices[0].message?.content?.trim() + '</Action>',
+        response: completion.choices[0].message,
       };
     } catch (error: any) {
       console.log('determineNextAction error', error);
@@ -105,31 +87,43 @@ export async function determineNextAction(
 export function formatPrompt(
   taskInstructions: string,
   previousActions: ParsedResponseSuccess[],
+  resume: string | null,
   memory: string | null,
   pageContents: string
 ) {
   let previousActionsString = '';
 
+  console.log('previousActions', previousActions);
+
   if (previousActions.length > 0) {
-    const serializedActions = previousActions
-      .map(
-        (action) =>
-          `<Thought>${action.thought}</Thought>\n<Action>${action.action}</Action>`
+    const lastFiveActions = previousActions.slice(
+      Math.max(previousActions.length - 15, 0)
+    );
+    const serializedActions = lastFiveActions
+      .map((action) =>
+        JSON.stringify({
+          action: action.parsedAction,
+          thought: action.thought,
+        })
       )
       .join('\n\n');
     previousActionsString = `You have already taken the following actions: \n${serializedActions}\n\n`;
   }
 
-  return `The user requests the following task:
-
+  return `TASK INSTRUCTIONS:
 ${taskInstructions}
+
+RESUME:
+${resume}
 
 ${memory}
 
-${previousActionsString}
+CURRENT TIME:
+${new Date().toLocaleString()}
 
-Current time: ${new Date().toLocaleString()}
+CURRENT PAGE CONTENTS:
+${pageContents}
 
-Current page contents:
-${pageContents}`;
+PREVIOUS ACTIONS TAKEN:
+${previousActionsString}`;
 }

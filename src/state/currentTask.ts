@@ -1,4 +1,3 @@
-import { CreateCompletionResponseUsage } from 'openai';
 import { attachDebugger, detachDebugger } from '../helpers/chromeDebugger';
 import {
   disableIncompatibleExtensions,
@@ -20,7 +19,7 @@ export type TaskHistoryEntry = {
   prompt: string;
   response: string;
   action: ParsedResponse;
-  usage: CreateCompletionResponseUsage;
+  usage: number | null;
 };
 
 export type CurrentTaskSlice = {
@@ -108,6 +107,8 @@ export const createCurrentTaskSlice: MyStateCreator<CurrentTaskSlice> = (
 
           setActionStatus('pulling-dom');
           const pageDOM = await getSimplifiedDom();
+
+          // console.log('pageDOM', pageDOM);
           if (!pageDOM) {
             set((state) => {
               state.currentTask.status = 'error';
@@ -119,6 +120,7 @@ export const createCurrentTaskSlice: MyStateCreator<CurrentTaskSlice> = (
           if (wasStopped()) break;
           setActionStatus('transforming-dom');
           const currentDom = templatize(html);
+          // console.log('currentDom', currentDom);
 
           const previousActions = get()
             .currentTask.history.map((entry) => entry.action)
@@ -136,49 +138,78 @@ export const createCurrentTaskSlice: MyStateCreator<CurrentTaskSlice> = (
             onError
           );
 
-          if (!query) {
-            set((state) => {
-              state.currentTask.status = 'error';
-            });
-            break;
-          }
+          // if (!query) {
+          //   set((state) => {
+          //     state.currentTask.status = 'error';
+          //   });
+          //   break;
+          // }
+
+          // console.log(query);
 
           if (wasStopped()) break;
 
+          console.log(JSON.stringify(query?.response, null, 2));
           setActionStatus('performing-action');
-          const action = parseResponse(query.response);
+          // const action = parseResponse(query.response);
 
-          set((state) => {
-            state.currentTask.history.push({
-              prompt: query.prompt,
-              response: query.response,
-              action,
-              usage: query.usage,
-            });
+          const actions = query?.response?.tool_calls.map((tool_call: any) => {
+            return {
+              parsedAction: tool_call.function,
+              actionString: '',
+              thought: JSON.parse(tool_call.function.arguments || '{}').thought,
+            };
           });
-          if ('error' in action) {
-            onError(action.error);
-            break;
-          }
-          if (
-            action === null ||
-            action.parsedAction.name === 'finish' ||
-            action.parsedAction.name === 'fail'
-          ) {
-            break;
-          }
 
-          if (action.parsedAction.name === 'click') {
-            await callDOMAction('click', action.parsedAction.args);
-          } else if (action.parsedAction.name === 'setValue') {
-            await callDOMAction(
-              action?.parsedAction.name,
-              action?.parsedAction.args
-            );
-          } else if (action.parsedAction.name === 'askUser') {
+          for (const action of actions) {
             set((state) => {
-              state.currentTask.status = 'pending';
+              state.currentTask.history.push({
+                prompt: query.prompt,
+                response: JSON.stringify(query.response),
+                action,
+                usage: 120,
+              });
             });
+            if ('error' in action) {
+              onError(action.error);
+              break;
+            }
+
+            console.log('action', JSON.stringify(action, null, 2));
+
+            if (
+              action === null ||
+              action.parsedAction?.name === 'finish' ||
+              action.parsedAction?.name === 'fail'
+            ) {
+              break;
+            }
+
+            if (action.parsedAction?.name === 'click') {
+              await callDOMAction(
+                'click',
+                JSON.parse(action.parsedAction?.arguments || '{}')
+              );
+            } else if (action.parsedAction?.name === 'setValue') {
+              await callDOMAction(
+                action?.parsedAction?.name,
+                JSON.parse(action?.parsedAction?.arguments || '{}')
+              );
+            } else if (action.parsedAction?.name === 'askUser') {
+              set((state) => {
+                state.currentTask.status = 'pending';
+              });
+            }
+
+            await sleep(500);
+          }
+          const failedOrFinished = actions?.find(
+            (a) =>
+              a.parsedAction?.name === 'fail' ||
+              a.parsedAction?.name === 'finish'
+          );
+          if (failedOrFinished) {
+            break;
           }
 
           if (wasStopped()) break;
@@ -191,7 +222,7 @@ export const createCurrentTaskSlice: MyStateCreator<CurrentTaskSlice> = (
 
           setActionStatus('waiting');
           // sleep 2 seconds. This is pretty arbitrary; we should figure out a better way to determine when the page has settled.
-          await sleep(2000);
+          await sleep(500);
         }
         set((state) => {
           state.currentTask.status = 'success';

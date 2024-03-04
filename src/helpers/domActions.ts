@@ -18,13 +18,15 @@ async function getObjectId(originalId: number) {
     selector: `[${TAXY_ELEMENT_SELECTOR}="${uniqueId}"]`,
   })) as any;
   if (!nodeId) {
-    throw new Error('Could not find node');
+    // throw new Error('Could not find node');
+    return 'error: Could not find node';
   }
   // get object id
   const result = (await sendCommand('DOM.resolveNode', { nodeId })) as any;
   const objectId = result.object.objectId;
   if (!objectId) {
-    throw new Error('Could not find object');
+    // throw new Error('Could not find object');
+    return 'error: Could not find object';
   }
   return objectId;
 }
@@ -34,7 +36,7 @@ async function scrollIntoView(objectId: string) {
     objectId,
     functionDeclaration: scrollScriptString,
   });
-  await sleep(1000);
+  await sleep(500);
 }
 
 async function getCenterCoordinates(objectId: string) {
@@ -45,8 +47,8 @@ async function getCenterCoordinates(objectId: string) {
   return { x: centerX, y: centerY };
 }
 
-const delayBetweenClicks = 200; // Set this value to control the delay between clicks
-const delayBetweenKeystrokes = 100; // Set this value to control typing speed
+const delayBetweenClicks = 100; // Set this value to control the delay between clicks
+const delayBetweenKeystrokes = 10; // Set this value to control typing speed
 
 async function clickAtPosition(
   x: number,
@@ -85,19 +87,13 @@ async function selectAllText(x: number, y: number) {
 async function typeText(text: string): Promise<void> {
   console.log(text);
   for (const char of text) {
-    await sendCommand('Input.dispatchKeyEvent', {
-      type: 'keyDown',
-      text: char,
-    });
+    const key = char === '\n' ? '\r' : char;
+    await sendCommand('Input.dispatchKeyEvent', { type: 'keyDown', text: key });
     await sleep(delayBetweenKeystrokes / 2);
-    await sendCommand('Input.dispatchKeyEvent', {
-      type: 'keyUp',
-      text: char,
-    });
+    await sendCommand('Input.dispatchKeyEvent', { type: 'keyUp', text: key });
     await sleep(delayBetweenKeystrokes / 2);
   }
 }
-
 async function blurFocusedElement() {
   const blurFocusedElementScript = `
       if (document.activeElement) {

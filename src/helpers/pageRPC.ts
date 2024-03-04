@@ -50,7 +50,7 @@ export const callRPC = async <T extends MethodName>(
       } else {
         // Content script may not have loaded, retry
         console.error(e);
-        await sleep(1000);
+        await sleep(500);
       }
     }
   }

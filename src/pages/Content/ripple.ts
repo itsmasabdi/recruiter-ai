@@ -11,6 +11,6 @@ export default async function ripple(x: number, y: number) {
 
   document.body.appendChild(ripple);
 
-  await sleep(1000);
+  await sleep(500);
   ripple.remove();
 }

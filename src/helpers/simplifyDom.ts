@@ -45,9 +45,12 @@ function generateSimplifiedDom(
 
   const interactive =
     element.getAttribute('data-interactive') === 'true' ||
+    element.getAttribute('aria-required') === 'true' ||
     element.hasAttribute('role');
   const hasLabel =
-    element.hasAttribute('aria-label') || element.hasAttribute('name');
+    element.hasAttribute('aria-label') ||
+    element.hasAttribute('aria-required') ||
+    element.hasAttribute('name');
   const includeNode = interactive || hasLabel;
 
   if (!includeNode && children.length === 0) return null;

@@ -13,8 +13,8 @@ const ModelDropdown = () => {
   return (
     <VStack spacing={4}>
       <Text fontSize="sm">
-        You'll need an OpenAI API Key to run the Taxy in developer mode. If you
-        don't already have one available, you can create one in your{' '}
+        You'll need an OpenAI API Key to run the Recruiter AI in developer mode.
+        If you don't already have one available, you can create one in your{' '}
         <Link
           href="https://platform.openai.com/account/api-keys"
           color="blue"
@@ -25,8 +25,8 @@ const ModelDropdown = () => {
         .
         <br />
         <br />
-        Taxy stores your API key locally and securely, and it is only used to
-        communicate with the OpenAI API.
+        Recruiter AI stores your API key locally and securely, and it is only
+        used to communicate with the OpenAI API.
       </Text>
       <HStack w="full">
         <Input

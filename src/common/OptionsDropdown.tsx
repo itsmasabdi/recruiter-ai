@@ -39,21 +39,21 @@ const OptionsDropdown = () => {
         >
           Reset API Key
         </MenuItem>
-        {/* <MenuItem
+        <MenuItem
           icon={<CalendarIcon />}
           onClick={() => {
             updateSettings({ page: 'resume' });
           }}
         >
           Resume
-        </MenuItem> */}
+        </MenuItem>
         <MenuItem
-          icon={<CalendarIcon />}
+          icon={<StarIcon />}
           onClick={() => {
             updateSettings({ page: 'memory' });
           }}
         >
-          Resume
+          Memory
         </MenuItem>
       </MenuList>
     </Menu>

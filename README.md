@@ -14,7 +14,7 @@ Here's Recruiter AI using Google Calendar with the prompt "Schedule standup tomo
 
 ![calendar](https://user-images.githubusercontent.com/176426/228092695-1bc11ea9-bfb7-470d-bbc6-0026e93c23c3.gif)
 
-## DISCLAIMER: THIS REPO IS BASED ON [TAXI AI](https://github.com/TaxyAI/browser-extension)
+DISCLAIMER: THIS REPO IS BASED ON [TAXI AI](https://github.com/TaxyAI/browser-extension)
 
 ## Table of Contents
 
